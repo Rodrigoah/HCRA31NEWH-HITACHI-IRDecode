@@ -19,7 +19,28 @@ There seems to be three data frames, each of them starting with a longer (sync?)
 - First pulse: 4505 uS
 - Second pulse: 8007 uS
 - Third pulse: 8007 uS
-
+## Decoding first frame:
+```
+Temperature                                         xxxxxxxx
+Binary decoded signal 1: 10010101 10011010 00000000 01000111 00000000 00000000 30ºC
+Binary decoded signal 1: 10010101 10011010 00000000 10010110 00000000 00000000 29ºC
+Binary decoded signal 1: 10010101 10011010 00000000 01000011 00000000 00000000 28ºC
+Binary decoded signal 1: 10010101 10011010 00000000 01001101 00000000 00000000 27ºC
+Binary decoded signal 1: 10010101 10011010 00000000 10001000 00000000 00000000 26ºC    
+ON/OFF                                       X
+Binary decoded signal 1: 10010101 10011010 00000000 01000111 00000000 00000000 30ºC ON
+Binary decoded signal 1: 10010101 10011010 00100000 01000111 00000000 00000000 30ºC OFF       
+FAN                                        XX
+Binary decoded signal 1: 10010101 10011010 10000000 00101110 00000000 00000000 HI
+Binary decoded signal 1: 10010101 10011010 01000000 00101110 00000000 00000000 ME
+Binary decoded signal 1: 10010101 10011010 11000000 00101110 00000000 00000000 LO
+Binary decoded signal 1: 10010101 10011010 11000000 00101110 00000000 00000000 QLO
+Mode
+                                                X   XX    x
+Binary decoded signal 1: 10010101 10011010 00000000 00001101 00000000 00000000 HEAT                          
+Binary decoded signal 1: 10010101 10011010 00000000 01001101 00000000 00000000 COOL
+Binary decoded signal 1: 10010101 10011010 00000100 11001110 00000000 00000000 DRY
+```
 
 Data is exported to CSV file format so it can get decoded using a python script
 
