@@ -16,9 +16,14 @@ There seems to be three data frames, each of them starting with a longer (sync?)
 
 ![General Capture Frames](https://github.com/user-attachments/assets/921c530a-a9d4-4580-bd0a-88554be97a09)
 
+
+The general structure of the signal is:
 - First pulse: 4505 uS
+- The first frame has 48 bits
 - Second pulse: 8007 uS
+- The second frame has 64 bits
 - Third pulse: 8007 uS
+- The third frame has 56 bits
 ## Decoding first frame:
 ```
 Temperature                                         xxxxxxxx
