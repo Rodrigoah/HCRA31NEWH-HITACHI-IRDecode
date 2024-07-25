@@ -144,7 +144,7 @@ def compute_pulse_statistics(durations):
     dict: A dictionary with the average and standard deviation for each category.
     """
     low_pulses = [d for d in durations if d < 0 and abs(d) >= 500 and abs(d) <= 700]
-    logic_lows = [d for d in durations if d > 0 and d >= 500 and d <= 700]
+    logic_lows = [d for d in durations if d > 0 and d >= 490 and d <= 700]
     logic_highs = [d for d in durations if d > 0 and d >= 1500 and d <= 1900]
 
     stats = {}
@@ -192,7 +192,7 @@ def compute_pulse_statistics(durations):
     return stats
 
 
-def Parse_Durations_2_BIN(durations):
+def Parse_Durations_2_BIN(durations,stats):
     Low_duration = 600
     Logic_High_duration = 1600
     Logic_Low_duration = 600
@@ -204,9 +204,9 @@ def Parse_Durations_2_BIN(durations):
         
         if current_duration < 0:
             # If the current duration is low level
-            if 1675 < next_duration < 1710:
+            if stats['logic_highs']['min'] <= next_duration <= stats['logic_highs']['max']:
                 Decoded_BIN.append(1)
-            elif 515 < next_duration <  610:
+            elif stats['logic_lows']['min'] <= next_duration <=  stats['logic_lows']['max']:
                 Decoded_BIN.append(0)
             elif 7990 < next_duration <  8050:
                 Decoded_BIN.append('Long pulse:'+ str(next_duration))
@@ -227,20 +227,94 @@ def Parse_BIN_Words (Binary):
     Word_lengths = [48,64,56]
     word_number=0
     Position=0
-    print("good")
+    #print("good")
     for length in Word_lengths:
         words.append([None] * length)
     for Bit in Binary[1:]:
-        print(Bit)
+        #print(str(Position) + " " + str(word_number))
+        
         if Bit == 0 or Bit == 1:
-            words[Position][word_number]=Bit
+            words[word_number][Position]=Bit
             Position +=1
+            
         else:
             word_number += 1
             Position=0
-            
+    word_number=0
+    
+    for word_len in words:
+        if not Word_lengths[word_number]  == len(words[word_number][:]):
+            print("length Error")
+            word_number += 1
     
     return words
+
+
+def process_file(file_path):
+    """
+    Processes a single CSV file, performing all steps from reading samples to decoding words.
+    
+    Parameters:
+    file_path (str): The path to the CSV file.
+    
+    Returns:
+    tuple: A tuple containing samples, durations, stats, Binary, and Words.
+    """
+    # Read samples from the CSV file
+    samples = read_csv(file_path)
+
+    # Parse samples to durations
+    durations = parse_samples(samples)
+    
+    # Compute pulse statistics
+    stats = compute_pulse_statistics(durations)
+    
+    # Decode durations to binary values
+    Binary = Parse_Durations_2_BIN(durations, stats)
+    
+    # Parse binary values to words
+    Words = Parse_BIN_Words(Binary)
+    
+    return samples, durations, stats, Binary, Words
+
+def write_words_to_file(file_name, words, file_path):
+    """
+    Writes the list of words to a text file, each word separated by a tab,
+    with the file name included before the words separated by a hyphen.
+    
+    Parameters:
+    file_name (str): The name of the original CSV file.
+    words (list of list of int): The list of words to write.
+    file_path (str): The path to the output text file.
+    """
+    with open(file_path, 'a') as file:  # Open in append mode to add to the existing content
+        file.write(file_name + ' - ' + '\t')
+        for word in words:
+            # Convert the word (list of ints) to a string and write each element consecutively
+            word_str = ''.join(str(bit) for bit in word if bit is not None)
+            # Write the word to the file, followed by a tab
+            file.write(word_str + '\t')
+        # Remove the trailing tab and add a newline
+        file.write('\n')
+
+def write_results(output_file, file_name, stats, Binary, Words):
+    """
+    Writes the results to the output file.
+    
+    Parameters:
+    output_file (file object): The output file object.
+    file_name (str): The name of the file being processed.
+    stats (dict): The computed statistics.
+    Binary (list): The decoded binary values.
+    Words (list): The parsed words.
+    """
+    output_file.write(f"{file_name}: ")
+    #output_file.write(f"Statistics: {stats}\n")
+    #output_file.write(f"Binary: {Binary}\n\n")
+    
+    # Write words with the original CSV file name to the output file
+    write_words_to_file(file_name, Words, output_file.name)
+
 
 
 # Main function to execute the workflow
@@ -265,8 +339,9 @@ try:
                         plot_signal(durations)
                         #plot_signal_24mhz(samples)
                         stats = compute_pulse_statistics(durations)
-                        Binary=Parse_Durations_2_BIN(durations)
+                        Binary=Parse_Durations_2_BIN(durations,stats)
                         Words=Parse_BIN_Words(Binary)
+                        write_results(output_file, file_name, stats, Binary, Words)
                         
 
                         # Write the filename and decoded signals in a new line
