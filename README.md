@@ -1,4 +1,4 @@
-# IN WORK
+![image](https://github.com/user-attachments/assets/6365b0b6-bfb3-4cef-9efc-d7326218309c)# IN WORK
 # GOAL
 The goal of this project is to decode IR signals emmited from a HITACHI HCRA31NEWH remote control 
 
@@ -35,8 +35,60 @@ Logic low: 565us
 Fixed: 10010101 10011010
 ### Byte 2
 FAN (LSB) - FAN (MSB) - Power - 0 - 0 - 0 - 0 - 0
+
+Fan
+
+|Fan Mode|Bin Value (Reversed)|Bin Value (MSB)|Dec value|
+|-|-|-|-|
+|Lo|11|11|3|
+|Me|01|10|2|
+|Hi|10|01|1|
+|Auto|00|00|00|
+
+Power
+
+|Power|Bin Value (Reversed)|Bin Value (MSB)|Dec value|
+|-|-|-|-|
+|On|0|0|0|
+|Off|1|1|1|
+
+
+
 ### Byte 3
 Mode (LSB) - Mode - Mode (MSB) - 0 - Temp (LSB) - Temp - Temp - Temp (MSB)
+
+Mode
+
+|Mode|Bin Value (Reversed)|Bin Value (MSB)|Dec value|
+|-|-|-|-|
+|Heat|000|000|0|
+|Auto|100|001|1|
+|Cool|010|010|2|
+|Dry|110|011|3|
+|Fan|001|100|4|
+
+Temp
+
+|Temperature(ºC) |Bin Value (Reversed)|Bin Value (MSB)|
+|-|-|-|
+|16|0000|0000|
+|17|1000|0001|
+|18|0100|0010|
+|19|1100|0011|
+|20|0010|0100|
+|21|1010|0101|
+|22|0110|0110|
+|23|1110|0111|
+|24|0001|1000|
+|25|1001|1001|
+|26|0101|1010|
+|27|1101|1011|
+|28|0011|1100|
+|29|1011|1101|
+|30|0111|1110|
+
+
+
 ### Byte 4 
 00000000
 ### Byte 5
