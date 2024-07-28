@@ -124,6 +124,31 @@ There is something here I cant figure out
 ### Byte 20
 Checksum
 
+### Summary
+||Bit 1|Bit 2|Bit 3|Bit 4|Bit 5|Bit 6|Bit 7|Bit 8|
+|-|-|-|-|-|-|-|-|-|
+|Byte 0|1|0|0|1|0|1|0|1|
+|Byte 1|1|0|0|1|1|0|1|0|
+|Byte 2|FAN 1|FAN 2|POWER|0|0|?|0|0|
+|Byte 3|MODE 1|MODE 2|MODE 3|0|TEMP1|TEMP2|TEMP3|TEMP4|
+|Byte 4|0|0|0|0|0|0|0|0|
+|Byte 5|0|0|0|0|0|0|0|0|
+|Byte 6|0|0|0|0|0|0|0|1|
+|Byte 7|0|0|0|0|0|0|0|0|
+|Byte 8|0|0|0|0|0|0|0|0|
+|Byte 9|0|0|0|0|0|0|0|0|
+|Byte 10|0|0|0|0|0|1|0|0|
+|Byte 11|0|0|0|0|0|0|0|0|
+|Byte 12|0|0|0|0|0|0|0|0|
+|Byte 13|C.S 1|C.S 2|C.S 3|C.S 4|C.S 5|C.S 6|C.S 7|C.S 8|
+|Byte 14|0|0|0|0|0|0|0|0|
+|Byte 15|?|?|?|?|?|?|?|?|
+|Byte 16|0|0|0|0|0|0|0|0|
+|Byte 17|0|0|0|0|0|0|0|0|
+|Byte 18|0|0|0|1|POWER?|1|0|0|
+|Byte 19|0|0|0|1|0|0|0|0|
+|Byte 20|C.S 1|C.S 2|C.S 3|C.S 4|C.S 5|C.S 6|C.S 7|C.S 8|
+
 
 
 ```
