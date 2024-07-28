@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/6365b0b6-bfb3-4cef-9efc-d7326218309c)# IN WORK
+# IN WORK
 # GOAL
 The goal of this project is to decode IR signals emmited from a HITACHI HCRA31NEWH remote control 
 
