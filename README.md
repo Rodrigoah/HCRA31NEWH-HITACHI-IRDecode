@@ -28,8 +28,8 @@ The general structure of the signal is:
 # Timings
 Approximately timing for the signales are the following:  
 Low pulses: 610us  
-Logic highs: 1680us  
-Logic low: 565us
+Logic highs: 1680us   (approx 3:1)
+Logic low: 565us (approx 1:1)
 
 ### Bytes 0 & 1
 Fixed: 10010101 10011010
