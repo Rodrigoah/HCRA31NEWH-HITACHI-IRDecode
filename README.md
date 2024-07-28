@@ -31,6 +31,12 @@ Low pulses: 610us
 Logic highs: 1680us   (approx 3:1)
 Logic low: 565us (approx 1:1)
 
+##Bit decoding
+
+The protocol seems to be very similar to a whirpool 168 bit protocol explained here: [Link to IRremoteESP8266 issue](https://github.com/crankyoldgit/IRremoteESP8266/issues/509). 
+
+
+
 ### Bytes 0 & 1
 Fixed: 10010101 10011010
 ### Byte 2
