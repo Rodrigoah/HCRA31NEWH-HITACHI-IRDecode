@@ -24,7 +24,11 @@ The general structure of the signal is:
 - The second frame has 64 bits
 - Third pulse: 8007 uS
 - The third frame has 56 bits
-## Decoding first frame:
+
+#Timings
+Low pulses are around 610us 
+Logic highs: 1680us
+logic low: 565us
 
 ### Bytes 0 & 1
 Fixed: 10010101 10011010
