@@ -25,6 +25,50 @@ The general structure of the signal is:
 - Third pulse: 8007 uS
 - The third frame has 56 bits
 ## Decoding first frame:
+
+### Bytes 0 & 1
+Fixed: 10010101 10011010
+### Byte 2
+FAN (LSB) - FAN (MSB) - Power - 0 - 0 - 0 - 0 - 0
+### Byte 3
+Mode (LSB) - Mode - Mode (MSB) - 0 - Temp (LSB) - Temp - Temp - Temp (MSB)
+### Byte 4 
+00000000
+### Byte 5
+00000000
+### SEPARATOR
+### Byte 6
+00000001
+### Byte 7
+00000000  
+### Byte 8
+00000000
+### Byte 9
+00000000
+### Byte 10
+00000100
+### Byte 11
+00000000
+### Byte 12
+00000000
+### Byte 13
+### Byte 14
+00000000
+### Byte 15
+There is something here I cant figure out
+### Byte 16
+00000000
+### Byte 17
+00000000
+### Byte 18
+0001?100 
+### Byte 19
+00010000
+### Byte 20
+Checksum
+
+
+
 ```
 Temperature                                         xxxxxxxx
 Binary decoded signal 1: 10010101 10011010 00000000 01000111 00000000 00000000 30ºC
