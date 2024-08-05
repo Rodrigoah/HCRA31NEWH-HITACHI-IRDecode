@@ -3,12 +3,9 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-
 # Define the sampling frequency
 sampling_frequency_mhz = 24
 sampling_frequency_hz = sampling_frequency_mhz * 1e6
-
-
 
 # Function to read CSV file and ignore the first line
 def read_csv(file_path):
@@ -29,30 +26,141 @@ def parse_samples(samples):
         if sample == current_value:
             count += 1
         else:
-            if current_value == 1:
-                durations.append(round(count/sampling_frequency_mhz))
-            else:
-                durations.append(-round(count/sampling_frequency_mhz))
-            current_value = sample
-            count = 1
-   # durations.append((current_value, count))  # Append the last run
+            if (count / sampling_frequency_mhz)>100:
+                if current_value == 1:
+                    durations.append(round(count / sampling_frequency_mhz))
+                else:
+                    durations.append(-round(count / sampling_frequency_mhz))
+                current_value = sample
+                count = 1
     durations = durations[1:]
     return durations
 
-# Function to parse durations
+# Function to compute pulse statistics
+def compute_pulse_statistics(durations):
+    low_pulses = [d for d in durations if d < 0 and 500 <= abs(d) <= 700]
+    logic_lows = [d for d in durations if d > 0 and 490 <= d <= 700]
+    logic_highs = [d for d in durations if d > 0 and 1500 <= d <= 1900]
 
-def parse_durations(durations):
-    parsed_durations = []
+    stats = {
+        'low_pulses': {'average': None, 'std_dev': None, 'max': None, 'min': None},
+        'logic_lows': {'average': None, 'std_dev': None, 'max': None, 'min': None},
+        'logic_highs': {'average': None, 'std_dev': None, 'max': None, 'min': None}
+    }
+
+    if low_pulses:
+        stats['low_pulses'] = {
+            'average': np.mean(low_pulses),
+            'std_dev': np.std(low_pulses),
+            'max': np.max(low_pulses),
+            'min': np.min(low_pulses)
+        }
+
+    if logic_lows:
+        stats['logic_lows'] = {
+            'average': np.mean(logic_lows),
+            'std_dev': np.std(logic_lows),
+            'max': np.max(logic_lows),
+            'min': np.min(logic_lows)
+        }
+
+    if logic_highs:
+        stats['logic_highs'] = {
+            'average': np.mean(logic_highs),
+            'std_dev': np.std(logic_highs),
+            'max': np.max(logic_highs),
+            'min': np.min(logic_highs)
+        }
+
+    return stats
+
+# Function to decode durations to binary values
+def parse_durations_to_bin(durations, stats):
+    decoded_bin = []
+    for position in range(len(durations) - 1):
+        current_duration = durations[position]
+        next_duration = durations[position + 1]
+
+        if current_duration < 0:
+            if stats['logic_highs']['min'] <= next_duration <= stats['logic_highs']['max']:
+                decoded_bin.append(1)
+            elif stats['logic_lows']['min'] <= next_duration <= stats['logic_lows']['max']:
+                decoded_bin.append(0)
+            elif 7990 < next_duration < 8050:
+                decoded_bin.append('Long pulse:' + str(next_duration))
+            elif -2<next_duration<2:
+                print(next_duration)
+            else:
+                decoded_bin.append("Error pulse2+ " + str(next_duration))
+    return decoded_bin
+
+def binary_to_reversed_hex(binary_list):
+    """
+    Converts a list of binary numbers to reversed hex bytes.
     
-    #for duration in durations:
-        #if abs(duration)<2000:
-            #regular pulse
-            
+    Parameters:
+    binary_list (list): A list of binary numbers (0 and 1).
     
-    return parsed_durations
+    Returns:
+    list: A list of reversed hex byte strings.
+    """
+    # Ensure the binary list is a multiple of 8
+    if len(binary_list) % 8 != 0:
+        raise ValueError("The length of the binary list must be a multiple of 8.")
 
-# Function to find pulses and decode frames
+    # Group the binary list into bytes (chunks of 8)
+    bytes_list = [binary_list[i:i+8] for i in range(0, len(binary_list), 8)]
 
+    reversed_hex_bytes = []
+
+    for byte in bytes_list:
+        # Reverse the byte
+        reversed_byte = byte[::-1]
+        # Convert the reversed byte to a string
+        reversed_byte_str = ''.join(map(str, reversed_byte))
+        # Convert the binary string to an integer
+        reversed_byte_int = int(reversed_byte_str, 2)
+        # Convert the integer to a hexadecimal string
+        reversed_hex = format(reversed_byte_int, '02x')
+        reversed_hex_bytes.append(reversed_hex)
+
+    return reversed_hex_bytes
+
+# Function to parse binary values to words
+def parse_bin_to_words(binary):
+    words = []
+    word_lengths = [48, 64, 56]
+    word_number = 0
+    position = 0
+
+    for length in word_lengths:
+        words.append([None] * length)
+
+    for bit in binary[1:]:
+        if bit == 0 or bit == 1:
+            words[word_number][position] = bit
+            position += 1
+        else:
+            word_number += 1
+            position = 0
+
+    return words
+
+# Function to write words to a text file
+def write_words_to_file(file_name, words, file_path):
+    def format_word(word):
+        # Join the bits into a string
+        word_str = ''.join(str(bit) for bit in word if bit is not None)
+        # Add a space every 8 bits
+        spaced_word_str = ' '.join(word_str[i:i+8] for i in range(0, len(word_str), 8))
+        return spaced_word_str
+    
+    with open(file_path, 'a') as file:  # Open in append mode to add to the existing content
+        file.write(file_name + ' - ' + '\t')
+        for word in words:
+            formatted_word = format_word(word)
+            file.write(formatted_word + '\t')
+        file.write('\n')
 
 # Function to prompt for folder selection
 def select_folder():
@@ -68,37 +176,22 @@ def select_folder():
     
     return folder_path
 
-
+# Function to plot the signal
 def plot_signal(signal):
-    """
-    Plots a signal where each position in the vector represents the length in time.
-    
-    Parameters:
-    signal (list of int): The input signal where each value represents the length in time.
-                          Positive values indicate '1' and negative values indicate '0'.
-    """
-    # Initialize variables
     time = 0
     times = []
     values = []
 
-    # Loop through the signal to create the time and value arrays
     for duration in signal:
-        # Determine the value (1 or 0)
         value = 1 if duration > 0 else 0
-        # Append the start time and value
         times.append(time)
         values.append(value)
-        # Increment time by the absolute duration
         time += abs(duration)
-        # Append the end time and value
         times.append(time)
         values.append(value)
 
-    # Convert time from microseconds to seconds for plotting
     times = np.array(times) / 1e6
 
-    # Plot the signal
     plt.figure(figsize=(10, 2))
     plt.step(times, values, where='post')
     plt.ylim(-0.5, 1.5)
@@ -107,251 +200,60 @@ def plot_signal(signal):
     plt.title('Signal Plot')
     plt.grid(True)
     plt.show()
-    
-def plot_signal_24mhz(signal):
-    """
-    Plots a signal sampled at 24 MHz.
-    
-    Parameters:
-    signal (list of int): The input signal sampled at 24 MHz, consisting of 0s and 1s.
-    """
-    # Calculate the time for each sample
-    sample_period = 1 / 24e6  # 1/24 MHz = 41.67 nanoseconds
-    times = np.arange(0, len(signal) * sample_period, sample_period)
 
-    # Plot the signal
-    plt.figure(figsize=(10, 2))
-    plt.step(times, signal, where='post')
-    plt.ylim(-0.5, 1.5)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Signal')
-    plt.title('Signal Plot at 24 MHz')
-    plt.grid(True)
-    plt.show()
-
-# Example usage
-def compute_pulse_statistics(durations):
-    """
-    Computes statistics for different types of pulse durations.
-    
-    Parameters:
-    durations (list of int): The input durations of pulses, where:
-                             - Negative values around 600 represent low pulses
-                             - Positive values around 600 represent logic lows
-                             - Positive values around 1700 represent highs
-    
-    Returns:
-    dict: A dictionary with the average and standard deviation for each category.
-    """
-    low_pulses = [d for d in durations if d < 0 and abs(d) >= 500 and abs(d) <= 700]
-    logic_lows = [d for d in durations if d > 0 and d >= 490 and d <= 700]
-    logic_highs = [d for d in durations if d > 0 and d >= 1500 and d <= 1900]
-
-    stats = {}
-    
-    if low_pulses:
-        stats['low_pulses'] = {
-            'average': np.mean(low_pulses),
-            'std_dev': np.std(low_pulses),
-            'max': np.max(low_pulses),
-            'min': np.min(low_pulses)
-        }
-    else:
-        stats['low_pulses'] = {
-            'average': None,
-            'std_dev': None
-        }
-        
-    if logic_lows:
-        stats['logic_lows'] = {
-            'average': np.mean(logic_lows),
-            'std_dev': np.std(logic_lows),
-            'max': np.max(logic_lows),
-            'min': np.min(logic_lows)
-        }
-    else:
-        stats['logic_lows'] = {
-            'average': None,
-            'std_dev': None
-        }
-    
-    if logic_highs:
-        stats['logic_highs'] = {
-            'average': np.mean(logic_highs),
-            'std_dev': np.std(logic_highs),
-            'max': np.max(logic_highs),
-            'min': np.min(logic_highs)
-            
-        }
-    else:
-        stats['logic_highs'] = {
-            'average': None,
-            'std_dev': None
-        }
-    
-    return stats
-
-
-def Parse_Durations_2_BIN(durations,stats):
-    Low_duration = 600
-    Logic_High_duration = 1600
-    Logic_Low_duration = 600
-    Decoded_BIN = []
-    
-    for position in range(len(durations) - 1):
-        current_duration = durations[position]
-        next_duration = durations[position + 1]
-        
-        if current_duration < 0:
-            # If the current duration is low level
-            if stats['logic_highs']['min'] <= next_duration <= stats['logic_highs']['max']:
-                Decoded_BIN.append(1)
-            elif stats['logic_lows']['min'] <= next_duration <=  stats['logic_lows']['max']:
-                Decoded_BIN.append(0)
-            elif 7990 < next_duration <  8050:
-                Decoded_BIN.append('Long pulse:'+ str(next_duration))
-                
-            
-            else:
-                Decoded_BIN.append("Error pulse + " + str(next_duration))
-        #else:
-            # If the current duration is high level
-            #if current_duration > Logic_High_duration * 1.1:
-                #Decoded_BIN.append(current_duration)
-    
-    return Decoded_BIN
-
-def Parse_BIN_Words (Binary):
-    
-    words = []
-    Word_lengths = [48,64,56]
-    word_number=0
-    Position=0
-    #print("good")
-    for length in Word_lengths:
-        words.append([None] * length)
-    for Bit in Binary[1:]:
-        #print(str(Position) + " " + str(word_number))
-        
-        if Bit == 0 or Bit == 1:
-            words[word_number][Position]=Bit
-            Position +=1
-            
-        else:
-            word_number += 1
-            Position=0
-    word_number=0
-    
-    for word_len in words:
-        if not Word_lengths[word_number]  == len(words[word_number][:]):
-            print("length Error")
-            word_number += 1
-    
-    return words
-
-
-def process_file(file_path):
-    """
-    Processes a single CSV file, performing all steps from reading samples to decoding words.
-    
-    Parameters:
-    file_path (str): The path to the CSV file.
-    
-    Returns:
-    tuple: A tuple containing samples, durations, stats, Binary, and Words.
-    """
-    # Read samples from the CSV file
-    samples = read_csv(file_path)
-
-    # Parse samples to durations
-    durations = parse_samples(samples)
-    
-    # Compute pulse statistics
-    stats = compute_pulse_statistics(durations)
-    
-    # Decode durations to binary values
-    Binary = Parse_Durations_2_BIN(durations, stats)
-    
-    # Parse binary values to words
-    Words = Parse_BIN_Words(Binary)
-    
-    return samples, durations, stats, Binary, Words
-
-def write_words_to_file(file_name, words, file_path):
-    """
-    Writes the list of words to a text file, each word separated by a tab,
-    with the file name included before the words separated by a hyphen.
-    
-    Parameters:
-    file_name (str): The name of the original CSV file.
-    words (list of list of int): The list of words to write.
-    file_path (str): The path to the output text file.
-    """
-    with open(file_path, 'a') as file:  # Open in append mode to add to the existing content
-        file.write(file_name + ' - ' + '\t')
-        for word in words:
-            # Convert the word (list of ints) to a string and write each element consecutively
-            word_str = ''.join(str(bit) for bit in word if bit is not None)
-            # Write the word to the file, followed by a tab
-            file.write(word_str + '\t')
-        # Remove the trailing tab and add a newline
-        file.write('\n')
-
-def write_results(output_file, file_name, stats, Binary, Words):
-    """
-    Writes the results to the output file.
-    
-    Parameters:
-    output_file (file object): The output file object.
-    file_name (str): The name of the file being processed.
-    stats (dict): The computed statistics.
-    Binary (list): The decoded binary values.
-    Words (list): The parsed words.
-    """
-    output_file.write(f"{file_name}: ")
-    #output_file.write(f"Statistics: {stats}\n")
-    #output_file.write(f"Binary: {Binary}\n\n")
-    
-    # Write words with the original CSV file name to the output file
-    write_words_to_file(file_name, Words, output_file.name)
-
-
+def write_hex_to_file(file_name, reversed_hex, hex_file_path):
+    with open(hex_file_path, 'a') as hex_file:
+        hex_file.write(f"{file_name}: \t{reversed_hex}\n")
 
 # Main function to execute the workflow
 try:
-        # Prompt user to select a folder
-        folder_path = select_folder()
+    # Prompt user to select a folder
+    folder_path = select_folder()
 
-        # Prepare the output file path
-        output_file_path = os.path.join(folder_path, "decoded_signals.txt")
+    # Prepare the output file path
+    output_file_path = os.path.join(folder_path, "decoded_signals.txt")
+    hex_file_path = os.path.join(folder_path, "hex_decoded_signals.txt")
 
-        with open(output_file_path, 'w') as output_file:
-            # Iterate over all files in the folder and subfolders
-            for root, _, files in os.walk(folder_path):
-                for file_name in files:
-                    if file_name.endswith('.csv'):
-                        file_path = os.path.join(root, file_name)
+    
+    
+    with open(output_file_path, 'w') as output_file:
+        # Iterate over all files in the folder and subfolders
+        for root, _, files in os.walk(folder_path):
+            for file_name in files:
+                if file_name.endswith('.csv'):
+                    file_path = os.path.join(root, file_name)
 
-                        # Read samples from the CSV file
-                        samples = read_csv(file_path)
+                    # Read samples from the CSV file
+                    samples = read_csv(file_path)
 
-                        durations = parse_samples(samples)
-                        plot_signal(durations)
-                        #plot_signal_24mhz(samples)
-                        stats = compute_pulse_statistics(durations)
-                        Binary=Parse_Durations_2_BIN(durations,stats)
-                        Words=Parse_BIN_Words(Binary)
-                        write_results(output_file, file_name, stats, Binary, Words)
-                        
+                    # Parse samples to durations
+                    durations = parse_samples(samples)
+                    plot_signal(durations)
 
-                        # Write the filename and decoded signals in a new line
-        
-        print(f"Decoded signals have been written to {output_file_path}")
+                    # Compute pulse statistics
+                    stats = compute_pulse_statistics(durations)
+
+                    # Decode durations to binary values
+                    binary = parse_durations_to_bin(durations, stats)
+                    print("a")
+                    # Parse binary values to words
+                    words = parse_bin_to_words(binary)
+                    print("b")
+                    word=words[:][0]
+                    word.extend(words[:][1])
+                    word.extend(words[:][2])
+                    # Write results to output file
+                    reversed_hex = binary_to_reversed_hex(word)
+                    print(file_name)
+                    print(":")
+                    print(reversed_hex)
+                    write_words_to_file(file_name, words, output_file_path)
+                    write_hex_to_file(file_name, reversed_hex, hex_file_path)
+
+    print(f"Decoded signals have been written to {output_file_path}")
 
 except FileNotFoundError as fnf_error:
-        print(fnf_error)
+    print(fnf_error)
 except Exception as e:
-        print(f"An error occurred: {e}")
-
-
-
+    print(f"An error occurred: {e}")
+    print(file_name)
